@@ -1,5 +1,0 @@
-setup.py
-../build/visualizer/visualizer.egg-info/PKG-INFO
-../build/visualizer/visualizer.egg-info/SOURCES.txt
-../build/visualizer/visualizer.egg-info/dependency_links.txt
-../build/visualizer/visualizer.egg-info/top_level.txt
