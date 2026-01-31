@@ -1,0 +1,17 @@
+# ROS 2 folders
+install/
+build/
+log/
+
+# Python folders
+__pycache__/
+*.pyc
+
+# Data & Results
+results/
+final_curves/
+durations/
+metrics_data/
+trajectories/
+pytorch_models/
+final_models/
