@@ -1,112 +1,200 @@
-DGViT: Depth-Goal-Guided Vision Transformer
+# DGViT  
+## Depth & Goal-Guided Vision Transformer for Visual Navigation
 
-DGViT is a state-of-the-art visual navigation model for mobile robots. It leverages the global receptive field of Vision Transformers and the spatial robustness of depth imagery to achieve stable, goal-directed navigation in complex environments.
-🌟 Overview
+📄 **Attention in Depth for Visual Navigation of a Mobile Robot**
 
-    Architecture: Integration of Transformers for long-range environmental perception.
+---
 
-    Input: Raw depth images from a single Fisheye camera and goal coordinates in a polar system.
+## 🚀 Overview
 
-    Robustness: Trained to handle noisy sensor data for seamless Sim-to-Real transition.
+**DGViT (Depth & Goal-Guided Vision Transformer)** is a visual navigation framework for mobile robots that leverages **Transformer-based attention mechanisms** and **depth perception** to enable robust goal-directed navigation.
 
-    Platform: Car-like mobile robot implemented in ROS2 Humble and Gazebo.
+A **car-like mobile robot** learns to autonomously navigate toward a **random goal position** using:
 
-📽️ Simulation Previews
-Training Environments
+- Raw **RGB images** from a **single fisheye camera**
+- **Goal information** expressed in **polar coordinates**
+- **Depth cues** to enhance spatial awareness and obstacle avoidance
 
-<p align="center"> <img src="https://github.com/REGRAGUIahmed/DGViT-Depth-Goal-Guided-Vision-Transformer/blob/master/Materials/tr1.gif" width="32%" /> <img src="https://github.com/REGRAGUIahmed/DGViT-Depth-Goal-Guided-Vision-Transformer/blob/master/Materials/tr2.gif" width="32%" /> <img src="https://github.com/REGRAGUIahmed/DGViT-Depth-Goal-Guided-Vision-Transformer/blob/master/Materials/tr3.gif" width="32%" /> </p>
-Unseen (Test) Environments
+The framework is implemented in a **ROS 2 Gazebo simulation environment** and designed for **sim-to-real transfer**.
 
-<p align="center"> <img src="https://github.com/REGRAGUIahmed/DGViT-Depth-Goal-Guided-Vision-Transformer/blob/master/Materials/test1.gif" width="48%" /> <img src="https://github.com/REGRAGUIahmed/DGViT-Depth-Goal-Guided-Vision-Transformer/blob/master/Materials/test2.gif" width="48%" /> </p>
-🏗️ Technical Framework
-Core Architecture
+**Platform**
+- Ubuntu 22.04  
+- ROS 2 Humble  
+- Gazebo Fortress  
+- PyTorch  
 
-The model utilizes a cross-modal attention mechanism to fuse depth features with target goal information.
+---
 
-<p align="center"> <img src="https://github.com/REGRAGUIahmed/DGViT-Depth-Goal-Guided-Vision-Transformer/blob/master/Materials/DGVit_final.png" width="85%"> </p>
-Noise-Augmented Perception
+## 🎥 Simulation Preview
 
-To improve generalization, depth images are augmented with synthetic noise during training.
+### Training Environment
 
-<p align="center"> <img src="https://github.com/REGRAGUIahmed/DGViT-Depth-Goal-Guided-Vision-Transformer/blob/master/Materials/noise_image_final.png" width="65%"> </p>
-⚙️ Installation & Setup
-1. Prerequisites
+![Training 1](Materials/tr1.gif)  
+![Training 2](Materials/tr2.gif)  
+![Training 3](Materials/tr3.gif)  
+![Training 4](Materials/tr4.gif)  
+![Training 5](Materials/tr5.gif)  
+![Training 6](Materials/tr6.gif)  
+![Training 7](Materials/tr7.gif)  
+![Training 8](Materials/tr8.gif)  
+![Training 9](Materials/tr9.gif)  
 
-Ensure you have the following installed:
+---
 
-    Ubuntu 22.04
+### Unseen Environment (Generalization)
 
-    ROS2 Humble
+![Test 1](Materials/test1.gif)  
+![Test 2](Materials/test2.gif)  
+![Test 3](Materials/test3.gif)  
+![Test 4](Materials/test4.gif)  
+![Test 5](Materials/test5.gif)  
+![Test 6](Materials/test6.gif)  
 
-    Gazebo Fortress
+---
 
-2. Environment Setup
+## 📦 Dependencies
 
-We recommend using Conda for Python dependency management:
-Bash
+### Core Requirements
 
-# Create and activate environment
-conda create -n dgvit python=3.10 -y
+1. **ROS 2 Humble**  
+   https://docs.ros.org/en/humble/Installation.html  
+
+2. **Gazebo Fortress**  
+   https://gazebosim.org/docs/fortress/install_ubuntu/  
+
+3. **PyTorch**  
+   https://pytorch.org/get-started/locally/  
+
+---
+
+## 🧪 Installation & Usage
+
+### 1️⃣ Create a Python Virtual Environment (Recommended)
+
+```bash
+conda create -n dgvit python=3.10
+```
+
+### 2️⃣ Activate the Environment
+
+```bash
 conda activate dgvit
+```
 
-# Install Python dependencies
-pip install numpy tqdm natsort cpprb matplotlib einops squaternion opencv-python rospkg rosnumpy pyyaml
+### 3️⃣ Install Python Dependencies
 
-# Install ROS2 system dependencies
-sudo apt install python3-colcon-common-extensions ros-humble-cv-bridge -y
+```bash
+pip install numpy tqdm natsort cpprb matplotlib einops squaternion             opencv-python rospkg rosnumpy pyyaml
+```
 
-3. Workspace Configuration
-Bash
+### 4️⃣ Install ROS 2 Dependencies
 
-# Create workspace
+```bash
+sudo apt install python3-colcon-common-extensions
+sudo apt install ros-humble-cv-bridge
+```
+
+---
+
+## 🧱 Create a ROS 2 Workspace
+
+```bash
 mkdir -p ~/vis_to_nav/src
 cd ~/vis_to_nav/src
+```
 
-# Clone the repository
+### Clone the Repository
+
+```bash
 git clone https://github.com/REGRAGUIahmed/DGViT-Depth-Goal-Guided-Vision-Transformer-.git
+```
 
-# Build the workspace
+---
+
+## 🔨 Build the Workspace
+
+```bash
 cd ~/vis_to_nav
-colcon build --symlink-install
+colcon build
+```
+
+### Source the Workspace
+
+```bash
 source install/setup.bash
+```
 
-🚀 Running the Model
-Path Modification
+---
 
-Before running, update the system paths in main.py and env_lab.py:
-Python
+## ⚙️ Path Configuration (Temporary)
 
-# In main.py
+Edit the following files to ensure correct Python path resolution.
+
+### `main.py`
+
+```python
 import sys
-sys.path.append('/home/<your_user>/vis_to_nav/src/DGViT-Depth-Goal-Guided-Vision-Transformer/src/vis_nav/vis_nav')
+sys.path.append('/home/<your_username>/vis_to_nav/src/vis_nav/vis_nav')
+```
 
-Start Training
+### `env_lab.py`
 
-Launch the Gazebo simulation and the training node:
-Bash
+```
+gtrl/scripts/Environments/env_lab.py
+```
 
-source install/setup.bash
+> ⚠️ This is a temporary workaround. Future versions will remove manual path edits.
+
+---
+
+## 🚀 Training DGViT
+
+```bash
+cd ~/vis_to_nav
 ros2 launch DGViT-Depth-Goal-Guided-Vision-Transformer training.launch.py
+```
 
-🛠️ Troubleshooting
+---
 
-To force-stop all ROS2 and Gazebo processes, use the following alias or command:
-Bash
+## 🛑 Stopping All Processes
 
-# Direct command
-killall -9 rosout roslaunch rosmaster gzserver nodelet robot_state_publisher gzclient python python3
+```bash
+killall -9 rosout gzserver gzclient python python3
+```
 
-# Recommended alias (add to ~/.bashrc)
-alias k9='killall -9 rosout roslaunch rosmaster gzserver nodelet robot_state_publisher gzclient python python3'
+### Optional Alias
 
-📖 Citation
+Add to `~/.bashrc`:
 
-If you find this work useful for your research, please cite our paper:
-Extrait de code
+```bash
+alias k9='killall -9 rosout gzserver gzclient python python3'
+```
 
-@article{regragui2026dgvit,
-  title={DGViT: Depth-Goal-Guided Vision Transformer for Mobile Robot Navigation},
-  author={Ahmed Regragui},
-  journal={Article in Revision},
-  year={2026}
-}
+Then run:
+
+```bash
+k9
+```
+
+---
+
+## 🧠 Framework Overview
+
+![Framework](Materials/framework_final.png)
+
+---
+
+## 🔬 Depth & Goal-Guided Vision Transformer (DGViT)
+
+![DGViT Architecture](Materials/DGVit_final.png)
+
+---
+
+## 🌫 Noise-Augmented Depth Images
+
+![Depth Noise](Materials/noise_image_final.png)
+
+## 📜 License
+
+This project is intended for **research and academic use**.  
+If you use this work in your research, please **cite appropriately**.
