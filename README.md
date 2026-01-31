@@ -9,11 +9,10 @@
 
 **DGViT (Depth & Goal-Guided Vision Transformer)** is a visual navigation framework for mobile robots that leverages **Transformer-based attention mechanisms** and **depth perception** to enable robust goal-directed navigation.
 
-A **car-like mobile robot** learns to autonomously navigate toward a **random goal position** using:
+A **mobile robot** learns to autonomously navigate toward a **random goal position** using:
 
-- Raw **RGB images** from a **single fisheye camera**
+- Raw **Depth images** from a **Depth camera** to enhance spatial awareness and obstacle avoidance
 - **Goal information** expressed in **polar coordinates**
-- **Depth cues** to enhance spatial awareness and obstacle avoidance
 
 The framework is implemented in a **ROS 2 Gazebo simulation environment** and designed for **sim-to-real transfer**.
 
@@ -84,7 +83,7 @@ conda activate dgvit
 ### 3️⃣ Install Python Dependencies
 
 ```bash
-pip install numpy tqdm natsort cpprb matplotlib einops squaternion             opencv-python rospkg rosnumpy pyyaml
+pip install numpy tqdm natsort cpprb matplotlib einops squaternion opencv-python rospkg rosnumpy pyyaml
 ```
 
 ### 4️⃣ Install ROS 2 Dependencies
@@ -136,14 +135,6 @@ Edit the following files to ensure correct Python path resolution.
 import sys
 sys.path.append('/home/<your_username>/vis_to_nav/src/vis_nav/vis_nav')
 ```
-
-### `env_lab.py`
-
-```
-gtrl/scripts/Environments/env_lab.py
-```
-
-> ⚠️ This is a temporary workaround. Future versions will remove manual path edits.
 
 ---
 
