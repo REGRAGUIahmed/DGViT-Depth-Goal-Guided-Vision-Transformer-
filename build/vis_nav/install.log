@@ -1,6 +1,7 @@
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/simple_vit.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/utils.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/main.py
+/home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/Imitation_learning.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/env_lab_secour.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/point_cloud2.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/env_lab.py
@@ -11,12 +12,15 @@
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/testing.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/depth_image_subscriber.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__init__.py
+/home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/visualizer.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/GoalFormer.py
+/home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/testing2.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/attention_imitating.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/vit_sac_network.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/simple_vit.cpython-310.pyc
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/utils.cpython-310.pyc
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/main.cpython-310.pyc
+/home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/Imitation_learning.cpython-310.pyc
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/env_lab_secour.cpython-310.pyc
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/point_cloud2.cpython-310.pyc
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/env_lab.cpython-310.pyc
@@ -27,7 +31,9 @@
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/testing.cpython-310.pyc
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/depth_image_subscriber.cpython-310.pyc
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/__init__.cpython-310.pyc
+/home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/visualizer.cpython-310.pyc
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/GoalFormer.cpython-310.pyc
+/home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/testing2.cpython-310.pyc
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/attention_imitating.cpython-310.pyc
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav/__pycache__/vit_sac_network.cpython-310.pyc
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/share/ament_index/resource_index/packages/vis_nav
@@ -42,6 +48,8 @@
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav-0.0.0-py3.10.egg-info/top_level.txt
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav-0.0.0-py3.10.egg-info/SOURCES.txt
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/python3.10/site-packages/vis_nav-0.0.0-py3.10.egg-info/PKG-INFO
+/home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/vis_nav/demonstration.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/vis_nav/depth_image_subscriber.py
+/home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/vis_nav/keyboard_control.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/vis_nav/main.py
 /home/regmed/dregmed/vis_to_nav/install/vis_nav/lib/vis_nav/testing.py

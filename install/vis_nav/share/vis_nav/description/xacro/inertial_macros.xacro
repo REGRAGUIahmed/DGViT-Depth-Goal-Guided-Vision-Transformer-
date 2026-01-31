@@ -14,7 +14,6 @@
         </inertial>
     </xacro:macro>  
 
-
     <xacro:macro name="inertial_box" params="mass x y z *origin">
         <inertial>
             <xacro:insert_block name="origin"/>
@@ -25,6 +24,10 @@
         </inertial>
     </xacro:macro>
 
+    <!-- length="0.025" radius="0.0335" m = 100g = 0.1Kg
+    ixx=0.000033264583
+    iyy=0.000033264583
+    izz=0.00002805625-->
 
     <xacro:macro name="inertial_cylinder" params="mass length radius *origin">
         <inertial>

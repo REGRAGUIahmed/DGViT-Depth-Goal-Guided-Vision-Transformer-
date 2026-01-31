@@ -10,7 +10,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     # urdf_file_name = 'td_robot.urdf' /home/regmed/dregmed/vis_to_nav/src/vis_nav/description/urdf/robot_w.urdf
-    urdf_file_name = 'scout_robot.urdf'
+    urdf_file_name = 'robot_w.urdf'
 
     # print(' s  urdf_file_name : {}'.format(urdf_file_name))
     
@@ -39,8 +39,8 @@ def generate_launch_description():
         Node(package='gazebo_ros', executable='spawn_entity.py',
                         arguments=['-topic', 'robot_description',
                                    '-entity', 'scout',
-                                   '-x','0.0',
-                                   '-y','3.0',
+                                   '-x','0.0', 
+                                   '-y','2.0',
                                    '-z','0.0'],
                         output='screen'),
 

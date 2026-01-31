@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Jul  9 18:31:19 2022
-
-@author: oscar
-"""
 import sys
-sys.path.append('/home/oscar/ws_oscar/DRL-Transformer-SimtoReal-Navigation/catkin_ws/src/gtrl/scripts')
+sys.path.append('/home/regmed/dregmed/vis_to_nav/src/vis_nav/vis_nav')
 
 import os
 import sys
@@ -24,7 +19,7 @@ from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 
-from SAC.DRL import SAC
+from DRL import SAC
 
 if torch.cuda.is_available():
     device = torch.device("cuda")
@@ -59,9 +54,6 @@ def train(epoch):
         observation = observation.float().permute(0,3,1,2).to(device)
         goal = goal[:, :2]
 
-        # Dist  = torch.minimum(goal[:,0]/15, torch.tensor(1.0))
-        # heading = goal[:, 1] / np.pi
-        # goal_normalized = torch.stack((Dist, heading), dim=1)
         predict, log_prob, mean = ego.policy.sample([observation, goal])
 
         mean = mean.clip(-max_action, max_action)
@@ -86,9 +78,6 @@ def val(epoch):
             observation = observation.float().permute(0,3,1,2).to(device)
             goal = goal[:, :2]
         
-            # Dist  = torch.minimum(goal[:,0]/15, torch.tensor(1.0))
-            # heading = goal[:, 1] / np.pi
-            # goal_normalized = torch.stack((Dist, heading), dim=1)
             predict, log_prob, mean = ego.policy.sample([observation, goal])
         
             mean = mean.clip(-max_action, max_action)
@@ -102,7 +91,7 @@ if __name__ == "__main__":
     file_path = os.getcwd()
     env = 'RRC'
     driver = 'Oscar_GoT_augmentend'
-    files = natsorted(glob.glob(file_path + '/Data/' + env + '/' + driver + '/*.npz'))
+    files = natsorted(glob.glob('/home/regmed/dregmed/vis_to_nav/Data/Bachelor/Regragui_RGB_Image' + '/*.npz'))
     seed = 1
     iteration = 600
     batch_size = 32  # Size of the mini-batch
@@ -127,7 +116,8 @@ if __name__ == "__main__":
     max_action = 1
     policy_freq = 1
     physical_state_dim = 2 # Polar coordinate
-
+    transformer_head = 4
+    transformer_block = 4
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     np.random.seed(seed)
@@ -152,6 +142,7 @@ if __name__ == "__main__":
     
     ######### Split the dataset #########    
     obs_dataset = np.concatenate(obs_list, axis=0)
+    print(len(obs_dataset))
     obs_train_size = int(0.8*len(obs_dataset))
     obs_val_size = len(obs_dataset) - obs_train_size
     obs_train_set, obs_val_set = random_split(obs_dataset, [obs_train_size, obs_val_size])
@@ -180,8 +171,9 @@ if __name__ == "__main__":
 
     ######### Initialize DRL agent #######
     ego = SAC(action_dim, physical_state_dim, policy_type, critic_type, policy_attention_fix,
-              critic_attention_fix, pre_buffer, seed, lr_c, lr_a, lr_alpha,
-              buffer_size, tau, policy_freq, gamma, alpha, auto_tune)
+            critic_attention_fix, pre_buffer, seed, lr_c, lr_a, lr_alpha,
+            buffer_size, tau, policy_freq, gamma, alpha, block=transformer_block,
+            head=transformer_head, automatic_entropy_tuning=auto_tune)
 
     optimizer = optim.Adam(ego.policy.parameters(), lr=lr_il)
 

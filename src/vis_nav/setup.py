@@ -26,6 +26,9 @@ setup(
             'main.py = vis_nav.main:main',
             'testing.py = vis_nav.testing:main',
             'depth_image_subscriber.py = vis_nav.depth_image_subscriber:main',
+            'demonstration.py = vis_nav.demonstration:main',
+            'keyboard_control.py = vis_nav.keyboard_control:main',
+            
         ],
     },
 )

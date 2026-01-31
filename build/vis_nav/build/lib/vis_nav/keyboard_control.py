@@ -1,172 +1,143 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Aug 21 16:13:09 2023
-
-@author: oscar
-"""
-
-# Copyright (c) 2011, Willow Garage, Inc.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-#    * Redistributions of source code must retain the above copyright
-#      notice, this list of conditions and the following disclaimer.
-#    * Redistributions in binary form must reproduce the above copyright
-#      notice, this list of conditions and the following disclaimer in the
-#      documentation and/or other materials provided with the distribution.
-#    * Neither the name of the Willow Garage, Inc. nor the names of its
-#      contributors may be used to endorse or promote products derived from
-#       this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-
-import time
-#import rospy
-import sys, select, termios, tty
-
+import rclpy
+from rclpy.node import Node
 from geometry_msgs.msg import Twist
+import sys
+import select
+import tty
+import termios
 
 msg = """
 Control Your Robot!
 ---------------------------
 Moving around:
-        w
-   a    s    d
+        z
+   q    s    d
         x
 
 w/x : increase/decrease linear velocity
 a/d : increase/decrease angular velocity
-space key, s : force stop
+space key : force stop
 
 CTRL-C to quit
 """
-class TeleKey():
-    def __init__(self):
-        self.twist = Twist()
 
-    def getKey(self):
+class TeleKey(Node):
+    def __init__(self):
+        super().__init__('telekey')
+        self.twist = Twist()
+        self.pub = self.create_publisher(Twist, '/scout/cmd_vel', 10)
+        self.create_subscription(Twist, '/scout/cmd_vel', self.cmd_callback, 10)
+
+        self.target_linear_vel = 0.0
+        self.target_angular_vel = 0.0
+        self.backup_linear_vel = 0.0
+        self.backup_angular_vel = 0.0
+        self.linear_vel_limit = 0.5
+        self.angular_vel_limit = 0.6
+        self.flag = False
+
+    def get_key(self):
         tty.setraw(sys.stdin.fileno())
         rlist, _, _ = select.select([sys.stdin], [], [], 0.1)
-        if rlist:
-            key = sys.stdin.read(1)
-        else:
-            key = ''
-    
+        key = sys.stdin.read(1) if rlist else ''
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
         return key
-    
-    def vels(self, target_linear_vel, target_angular_vel):
-        return "currently:\tlinear vel %s\t angular vel %s " % (target_linear_vel,target_angular_vel)
 
-def cmd_callback(cmd):
-    global backup_linear_vel, backup_angular_vel
-    backup_linear_vel = cmd.linear.x
-    backup_angular_vel = cmd.angular.z
+    def vels(self):
+        return f"currently:\tlinear vel {self.target_linear_vel:.2f}\t angular vel {self.target_angular_vel:.2f}"
 
-if __name__=="__main__":
-    settings = termios.tcgetattr(sys.stdin)
+    def cmd_callback(self, msg):
+        self.backup_linear_vel = msg.linear.x
+        self.backup_angular_vel = msg.angular.z
+        # self.get_logger().info(
+        #     f"Backup velocities updated: linear={self.backup_linear_vel}, angular={self.backup_angular_vel}"
+        # )
 
-    '''rospy.init_node('turtlebot3_teleop')
-    pub = rospy.Publisher('/scout/telekey', Twist, queue_size=5)
-    cmd = rospy.Subscriber('/scout/cmd_vel', Twist, cmd_callback, queue_size=1)'''
-    pub=None
-    status = 0
-    target_linear_vel = 0
-    target_angular_vel = 0
-    backup_linear_vel = 0
-    backup_angular_vel = 0
-    linear_vel_limit = 1.0
-    angular_vel_limit = 1.0
-    telekey = TeleKey()
-    flag = False
-    try:
-        print (msg)
-        while(1):
-            key = telekey.getKey()
-            if key == '1' :
-                target_linear_vel = backup_linear_vel
-                target_angular_vel = backup_angular_vel
-                telekey.twist.angular.x = 1
-                flag = True
-                print('Engage!!!')
-            elif key == '2' :
-                telekey.twist.angular.x = 0
-                flag = False
-                print('DisEngage!!!')
-            elif key == '\x03' :
-                break
+    def control_loop(self):
+        global settings
+        settings = termios.tcgetattr(sys.stdin)
+        print(msg)
 
-            if flag:
-                if key == 'w' :
-                    if (target_linear_vel + 0.05)*target_linear_vel < 0:
-                        target_linear_vel = 0.0
-                    else:
-                        target_linear_vel = target_linear_vel + 0.05
-                    print (telekey.vels(0.5*(target_linear_vel+1),target_angular_vel))
-                elif key == 's' :
-                    if (target_linear_vel - 0.05)*target_linear_vel < 0:
-                        target_linear_vel = 0.0
-                    else:
-                        target_linear_vel = target_linear_vel - 0.05
-                    print (telekey.vels(0.5*(target_linear_vel+1),target_angular_vel))
-                elif key == 'a' :
-                    if (target_angular_vel + 0.1)*target_angular_vel < 0:
-                        target_angular_vel = 0.0
-                    else:
-                        target_angular_vel = target_angular_vel + 0.1
-                    print (telekey.vels(0.5*(target_linear_vel),target_angular_vel))
-                elif key == 'd' :
-                    if (target_angular_vel - 0.1)*target_angular_vel < 0:
-                        target_angular_vel = 0.0
-                    else:
-                        target_angular_vel = target_angular_vel - 0.1
-                    print (telekey.vels(0.5*(target_linear_vel+1),target_angular_vel))
-                elif key == 'x' :
-                    target_linear_vel   = 0
-                    target_angular_vel  = 0
-                    print (telekey.vels(0.5, 0))
-                elif key == 'q' :
-                    target_angular_vel = 0
-                    print (telekey.vels(0.5*(target_linear_vel+1), 0))
-                elif key == ' ' :
-                    target_linear_vel   = -1
-                    target_angular_vel  = 0
-                    print (telekey.vels(0, 0))
+        try:
+            while rclpy.ok():
+                key = self.get_key()
 
-            if target_linear_vel >= 0:
-                target_linear_vel = min(target_linear_vel, linear_vel_limit)
-            else:
-                target_linear_vel = max(target_linear_vel, -linear_vel_limit)
-            
-            if target_angular_vel >= 0:
-                target_angular_vel = min(target_angular_vel, angular_vel_limit)
-            else:
-                target_angular_vel = max(target_angular_vel, -angular_vel_limit)
-            
-            telekey.twist.linear.x = target_linear_vel
-            telekey.twist.angular.z = target_angular_vel
+                if key == '1':
+                    self.target_linear_vel = self.backup_linear_vel
+                    self.target_angular_vel = self.backup_angular_vel
+                    self.twist.angular.x = 0.0
+                    self.flag = True
+                    self.get_logger().info('Engage!!!')
+                elif key == '2':
+                    self.twist.angular.x = 0.0
+                    self.flag = False
+                    self.get_logger().info('DisEngage!!!')
+                elif key == '\x03':  # CTRL+C
+                    break
 
-            pub.publish(telekey.twist)
-    except:
-        print ('니 내 누긴지 아니? ')
+                if self.flag:
+                    self.update_velocities(key)
 
-    finally:
+                # Clamp velocities
+                # Clamp velocities
+                self.target_linear_vel = max(0.0, min(self.target_linear_vel, self.linear_vel_limit))
+
+                # self.target_linear_vel = max(
+                #     min(self.target_linear_vel, self.linear_vel_limit), -self.linear_vel_limit
+                # )
+                self.target_angular_vel = max(
+                    min(self.target_angular_vel, self.angular_vel_limit), -self.angular_vel_limit
+                )
+
+                self.twist.linear.x = self.target_linear_vel
+                
+                self.twist.angular.z = self.target_angular_vel
+                # self.get_logger().info(
+                #             f"Backup velocities updated: linear={self.twist.linear.x}, angular={self.twist.angular.z} \nself.twist.linear.y = {self.twist.linear.y} \nself.twist.linear.z = {self.twist.linear.z}"                      )
+                self.pub.publish(self.twist)
+        finally:
+            self.stop_robot()
+
+    def update_velocities(self, key):
+        if key == 'z':
+            self.target_linear_vel += 0.05
+        elif key == 's':
+            self.target_linear_vel -= 0.05
+        elif key == 'q':
+            self.target_angular_vel += 0.05
+        elif key == 'd':
+            self.target_angular_vel -= 0.05
+        elif key == 'x':
+            self.target_linear_vel = 0.0
+            self.target_angular_vel = 0.0
+        elif key == 'a':
+            self.target_angular_vel = 0.0
+        elif key == ' ':
+            self.target_linear_vel = -1.0
+            self.target_angular_vel = 0.0
+
+        # self.get_logger().info(self.vels())
+
+    def stop_robot(self):
         twist = Twist()
-        twist.linear.x = 0; twist.linear.y = 0; twist.linear.z = 0
-        twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = 0
-        pub.publish(twist)
+        twist.linear.x = 0.0
+        twist.angular.z = 0.0
+        self.pub.publish(twist)
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
 
-    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
+
+def main(args=None):
+    rclpy.init(args=args)
+    telekey = TeleKey()
+
+    try:
+        telekey.control_loop()
+    except KeyboardInterrupt:
+        telekey.get_logger().info('Node interrupted by user')
+    finally:
+        telekey.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()

@@ -17,6 +17,7 @@ test/test_flake8.py
 test/test_pep257.py
 vis_nav/DRL.py
 vis_nav/GoalFormer.py
+vis_nav/Imitation_learning.py
 vis_nav/__init__.py
 vis_nav/attention_imitating.py
 vis_nav/demonstration.py
@@ -29,5 +30,7 @@ vis_nav/main.py
 vis_nav/point_cloud2.py
 vis_nav/simple_vit.py
 vis_nav/testing.py
+vis_nav/testing2.py
 vis_nav/utils.py
+vis_nav/visualizer.py
 vis_nav/vit_sac_network.py

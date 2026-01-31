@@ -1,0 +1,4 @@
+44
+Action = [0.5307625122368336, -0.2985621392726898]
+Mean Shannon-Wiener Index: 10.759804487228394
+Mean Gini Coefficient: 0.90386604693048

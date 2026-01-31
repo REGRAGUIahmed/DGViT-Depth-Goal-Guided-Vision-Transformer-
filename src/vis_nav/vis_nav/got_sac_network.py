@@ -73,18 +73,18 @@ class ValueNetwork(nn.Module):
 
 
 class GoTQNetwork(nn.Module):
-    def __init__(self, nb_actions, nb_pstate, block, head):
+    def __init__(self, nb_actions, nb_pstate, block, head, l_f_size):
         super(GoTQNetwork, self).__init__()
         
         self.trans = GoT(
             image_size = (128, 160),
             patch_size = (16, 20),
             num_classes = 2,
-            dim = 256,
+            dim = l_f_size,
             depth = block,
             heads = head,
             mlp_dim = 2048,
-            channels = 4
+            channels = 1
         )
 
         self.conv1 = nn.Conv2d(4,16,5, stride=2)
@@ -92,13 +92,13 @@ class GoTQNetwork(nn.Module):
         self.conv3 = nn.Conv2d(64,256,5, stride=2)
         
         self.avg = nn.AdaptiveAvgPool2d(output_size=(1,1))
-        self.fc1 = nn.Linear(256+32+nb_actions,128)
+        self.fc1 = nn.Linear(l_f_size+nb_actions,128)
         self.fc2 = nn.Linear(128,32)
         self.fc3 = nn.Linear(32,nb_actions)
         
-        self.fc_embed = nn.Linear(nb_pstate, 32)
+        self.fc_embed = nn.Linear(nb_pstate, l_f_size)
         
-        self.fc11 = nn.Linear(256+32+nb_actions,128)
+        self.fc11 = nn.Linear(l_f_size+nb_actions,128)
         self.fc21 = nn.Linear(128,32)
         self.fc31 = nn.Linear(32,nb_actions)
 
@@ -106,31 +106,16 @@ class GoTQNetwork(nn.Module):
 
     def forward(self, inp):
         istate, pstate, a = inp
-
         x1 = istate
-
-        x1 = self.trans.forward(x1)
-        x1 = x1.view(x1.size(0), -1)
-        
-        
-        '''    def forward(self, inp):
-        istate, pstate = inp
-        x1 = istate
-
-        x2 = pstate
-        x2 = self.fc_embed(x2)
-
-        latent_features = self.trans.forward(x1, x2)'''
-        
         x2 = pstate
         x2 = F.relu(self.fc_embed(x2))
-        
-        x = torch.cat([x1, x2, a], dim=1)
-        
+        x1 = self.trans.forward(x1,x2)
+        x1 = x1.view(x1.size(0), -1)
+        x = torch.cat([x1, a], dim=1)
         q1 = F.relu(self.fc1(x))
         q1 = F.relu(self.fc2(q1))
         q1 = self.fc3(q1)
-
+        
         q2 = F.relu(self.fc11(x))
         q2 = F.relu(self.fc21(q2))
         q2 = self.fc31(q2)
@@ -141,7 +126,7 @@ class QNetwork(nn.Module):
     def __init__(self, nb_actions, nb_pstate):
         super(QNetwork, self).__init__()
 
-        self.conv1 = nn.Conv2d(4,16,5, stride=2)
+        self.conv1 = nn.Conv2d(1,16,5, stride=2)
         self.conv2 = nn.Conv2d(16,64,5, stride=2)
         self.conv3 = nn.Conv2d(64,256,5, stride=2)
         
@@ -162,6 +147,7 @@ class QNetwork(nn.Module):
         istate, pstate, a = inp
 
         x1 = istate
+        x1 = x1.unsqueeze(1) 
         x1 = F.relu(self.conv1(x1))
         x1 = F.relu(self.conv2(x1))
         x1 = F.relu(self.conv3(x1))
@@ -184,28 +170,27 @@ class QNetwork(nn.Module):
         return q1, q2
 
 class GoTPolicy(nn.Module):
-    def __init__(self, nb_actions, nb_pstate, block, head, action_space=None):
+    def __init__(self, nb_actions, nb_pstate, block, head,l_f_size, action_space=None):
         super(GoTPolicy, self).__init__()
 
         self.trans = GoT(
             image_size = (128, 160),
             patch_size = (16, 20),
             num_classes = 2,
-            dim = 32,
+            dim = l_f_size,
             depth = block,
             heads = head,
             mlp_dim = 2048,
             channels = 4
         )
-        
-        self.fc_embed = nn.Linear(nb_pstate, 32)
+        self.fc_embed = nn.Linear(nb_pstate, l_f_size) #  32 --> 64
 
-        self.fc1 = nn.Linear(32,128)
+        self.fc1 = nn.Linear(l_f_size,128)
         self.fc2 = nn.Linear(128,128)
 
         self.mean_linear = nn.Linear(128, nb_actions)
         self.log_std_linear = nn.Linear(128, nb_actions)
-
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.apply(weights_init_)
 
         # action rescaling
@@ -217,14 +202,29 @@ class GoTPolicy(nn.Module):
                 (action_space.high - action_space.low) / 2.)
             self.action_bias = torch.FloatTensor(
                 (action_space.high + action_space.low) / 2.)
-
+    def choose_action(self, istate, pstate, evaluate=False):
+        if istate.ndim < 4:
+            #print(f'istate.ndim = {istate.ndim}')
+            istate = torch.FloatTensor(istate).float().permute(2,0,1)
+            # istate = torch.FloatTensor(istate).float().unsqueeze(0).permute(0,3,1,2).to(self.device)
+            pstate = torch.FloatTensor(pstate).float().unsqueeze(0)
+        else:
+            istate = torch.FloatTensor(istate).float().permute(0,3,1,2)
+            pstate = torch.FloatTensor(pstate).float()
+        
+        if evaluate is False:
+            # print(f'self.policy.sample([istate, pstate]) {istate.shape}')
+            action, _, _ = self.sample([istate, pstate])
+        else:
+            _, _, action = self.sample([istate, pstate])
+        return action.detach().squeeze(0).cpu().numpy()
     def forward(self, inp):
         istate, pstate = inp
         x1 = istate
 
         x2 = pstate
-        x2 = self.fc_embed(x2)
-
+        x2 = self.fc_embed(x2) #2
+        # print(f'verify x2.shape ={x1.shape}')
         latent_features = self.trans.forward(x1, x2)
         
         x = F.relu(self.fc1(latent_features))
@@ -236,11 +236,12 @@ class GoTPolicy(nn.Module):
         return mean, log_std
 
     def sample(self, inp):
-        mean, log_std = self.forward(inp)
+        mean, log_std= self.forward(inp) #1
         std = log_std.exp()
         normal = Normal(mean, std)
         x_t = normal.rsample()  # for reparameterization trick (mean + std * N(0,1))
         y_t = torch.tanh(x_t)
+        # print(f'action ya khoya = {y_t}')
         action = y_t * self.action_scale + self.action_bias
         log_prob = normal.log_prob(x_t)
         # Enforcing Action Bound
@@ -258,7 +259,8 @@ class GaussianPolicy(nn.Module):
     def __init__(self, nb_actions, nb_pstate, action_space=None):
         super(GaussianPolicy, self).__init__()
         
-        self.conv1 = nn.Conv2d(4,16,5, stride=2)
+        # self.conv1 = nn.Conv2d(4,16,5, stride=2)
+        self.conv1 = nn.Conv2d(1,16,5, stride=2)
         self.conv2 = nn.Conv2d(16,64,5, stride=2)
         self.conv3 = nn.Conv2d(64,256,5, stride=2)
         self.avg = nn.AdaptiveAvgPool2d(output_size=(1,1))
@@ -286,7 +288,7 @@ class GaussianPolicy(nn.Module):
     def forward(self, inp):
         istate, pstate = inp
         x1 = istate
-
+        x1 = x1.unsqueeze(1) 
         x1 = F.relu(self.conv1(x1))
         x1 = F.relu(self.conv2(x1))
         x1 = F.relu(self.conv3(x1))
@@ -368,7 +370,7 @@ class DeterministicPolicy(nn.Module):
         x = torch.cat([x1, x2], dim=1)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        mean = torch.tanh(self.mean_linear(x)) * self.action_scale + self.action_bias
+        mean = torch.tanh(self.mean(x)) * self.action_scale + self.action_bias
         return mean
 
     def sample(self, inp):
@@ -385,23 +387,23 @@ class DeterministicPolicy(nn.Module):
         return super(DeterministicPolicy, self).to(device)
 
 class DeterministicGoTPolicy(nn.Module):
-    def __init__(self, nb_actions, nb_pstate, block, head, action_space=None):
+    def __init__(self, nb_actions, nb_pstate, block, head,l_f_size, action_space=None):
         super(DeterministicGoTPolicy, self).__init__()
         
         self.trans = GoT(
             image_size = (128, 160),
             patch_size = (16, 20),
             num_classes = 2,
-            dim = 256,
+            dim = l_f_size,
             depth = block,
             heads = head,
             mlp_dim = 2048,
-            channels = 4
+            channels = 1
         )
         
-        self.fc_embed = nn.Linear(nb_pstate, 32)
+        self.fc_embed = nn.Linear(nb_pstate, l_f_size)
                 
-        self.fc1 = nn.Linear(256+32,128)
+        self.fc1 = nn.Linear(l_f_size,128)
         self.fc2 = nn.Linear(128,32)
         self.noise = torch.Tensor(nb_actions)
 
@@ -423,15 +425,12 @@ class DeterministicGoTPolicy(nn.Module):
     def forward(self, inp):
         istate, pstate = inp
         x1 = istate
-
-        x1 = self.trans.forward(x1)
-        x1 = x1.view(x1.size(0), -1)
-
         x2 = pstate
         x2 = self.fc_embed(x2)
+        x1 = self.trans.forward(x1,x2)
+        x1 = x1.view(x1.size(0), -1)
         
-        x = torch.cat([x1, x2], dim=1)
-        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc1(x1))
         x = F.relu(self.fc2(x))
         mean = torch.tanh(self.mean_linear(x)) * self.action_scale + self.action_bias
         return mean

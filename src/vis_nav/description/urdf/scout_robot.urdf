@@ -336,6 +336,11 @@
           <near>0.05</near>
           <far>8.0</far>
         </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.05</stddev>
+        </noise>
       </camera>
       <plugin filename="libgazebo_ros_camera.so" name="camera_controller">
         <frame_name>camera_link_optical</frame_name>
@@ -436,43 +441,43 @@
       </plugin> -->
     <!-- </sensor>
   </gazebo> -->
-  <!-- <joint name="base_link_cameraFishEye_joint" type="fixed">
+  <joint name="base_link_cameraFishEye_joint" type="fixed">
     <axis xyz="0.19 0 0.5"/>
     <origin rpy="0 0 0" xyz="0.21 0 0.5"/>
     <parent link="base_link"/>
     <child link="cameraFishEye"/>
-  </joint> -->
+  </joint> 
   <!-- Camera -->
-  <!-- <link name="cameraFishEye">
+  <link name="cameraFishEye">
     <inertial>
       <mass value="1e-5"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
-    </inertial> -->
-    <!-- <visual>
+    </inertial>
+    <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
         <cylinder radius="0.03" length="0.03"/>
       </geometry>
       <material name="grey"/>
-    </visual> -->
-    <!-- <collision>
+    </visual>
+    <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
         <cylinder length="0.03" radius="0.03"/>
       </geometry>
     </collision>
-  </link> -->
-  <!-- <gazebo reference="cameraFishEye">
+  </link>
+  <gazebo reference="cameraFishEye">
     <material value="Gazebo/Grey"/>
-  </gazebo> -->
-  <!-- <link name="fisheye_frame"/>
+  </gazebo>
+  <link name="fisheye_frame"/>
   <joint name="fisheye_joint" type="fixed">
     <origin rpy="-1.57 0 -1.57" xyz="0 0 0"/>
     <parent link="cameraFishEye"/>
     <child link="fisheye_frame"/>
-  </joint> -->
-  <!-- <gazebo reference="cameraFishEye">
+  </joint>
+  <gazebo reference="cameraFishEye">
     <sensor name="camera2" type="wideanglecamera">
       <update_rate>30.0</update_rate>
       <camera name="head">
@@ -524,5 +529,5 @@
         <hackBaseline>0</hackBaseline>
       </plugin>
     </sensor>
-  </gazebo> -->
+  </gazebo>
 </robot>

@@ -18,6 +18,7 @@ from torch.optim import Adam
 import torch.nn.functional as F
 
 from utils import soft_update, hard_update
+import copy
 
 ###### GoT-SAC #######
 from got_sac_network import GaussianPolicy, QNetwork
@@ -35,7 +36,7 @@ class SAC(object):
                  policy_attention_fix, critic_attention_fix, pre_buffer, seed,
                  LR_C = 1e-3, LR_A = 1e-3, LR_ALPHA=1e-4, BUFFER_SIZE=int(2e5), 
                  TAU=5e-3, POLICY_FREQ = 2, GAMMA = 0.99, ALPHA=0.05,
-                 block = 2, head = 4, automatic_entropy_tuning=True):
+                 block = 2, head = 4,l_f_size=32, buffer_size_expert=10816,automatic_entropy_tuning=True):
         
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
@@ -49,7 +50,7 @@ class SAC(object):
         self.itera = 0
         self.guidence_weight = 1.0
         self.engage_weight = 1.0
-        self.buffer_size_expert = 5e3
+        self.buffer_size_expert = buffer_size_expert+1
         self.batch_expert = 0
 
         self.policy_type = policy_type
@@ -61,7 +62,12 @@ class SAC(object):
 
         self.block = block
         self.head = head
-
+        self.l_f_size = l_f_size
+        #TD3 parameters
+        self.policy_delay = 2 
+        self.target_noise_std = 0.4
+        self.noise_clip = 0.5
+        
         torch.manual_seed(self.seed)
         torch.cuda.manual_seed(self.seed)
         np.random.seed(self.seed)
@@ -72,24 +78,24 @@ class SAC(object):
         set_seed(self.seed)
 
         self.replay_buffer = PrioritizedReplayBuffer(BUFFER_SIZE,
-                                          {"obs": {"shape": (128,160,4)},
+                                          {"obs": {"shape": (128,160)},
                                            "act": {"shape":action_dim},
                                            "pobs": {"shape":pstate_dim},
                                            "next_pobs": {"shape":pstate_dim},
                                            "rew": {},
-                                           "next_obs": {"shape": (128,160,4)},
+                                           "next_obs": {"shape": (128,160)},
                                            "engage": {},
                                            "done": {}},
                                           next_of=("obs"))
 
         if self.pre_buffer:
             self.replay_buffer_expert = PrioritizedReplayBuffer(self.buffer_size_expert,
-                                                                {"obs": {"shape": (128,160,4)},
+                                                                {"obs": {"shape": (128,160)},
                                                                  "act_exp": {"shape":action_dim},
                                                                  "pobs": {"shape":pstate_dim},
                                                                  "next_pobs": {"shape":pstate_dim},
                                                                  "rew": {},
-                                                                 "next_obs": {"shape": (128,160,4)},
+                                                                 "next_obs": {"shape": (128,160)},
                                                                  "done": {}},
                                                                 next_of=("obs"))
 
@@ -97,8 +103,8 @@ class SAC(object):
         if self.critic_type == "Transformer":
             #self.critic = TransformerQNetwork(self.action_dim, self.pstate_dim).to(device=self.device)
             self.critic = TransformerQNetwork(self.action_dim, self.pstate_dim,
-                                                    self.block, self.head).to(device=self.device)
-            if critic_attention_fix:
+                                                    self.block, self.head, self.l_f_size).to(device=self.device)
+            if critic_attention_fix: #False
                 params = list(self.critic.fc1.parameters()) + list(self.critic.fc2.parameters()) +\
                          list(self.critic.fc3.parameters()) + list(self.critic.fc11.parameters()) +\
                          list(self.critic.fc21.parameters()) + list(self.critic.fc31.parameters())
@@ -107,8 +113,8 @@ class SAC(object):
                 self.critic_optim = Adam(self.critic.parameters(), LR_C)
 
             self.critic_target = TransformerQNetwork(self.action_dim, self.pstate_dim,
-                                                     self.block, self.head).to(self.device)
-            hard_update(self.critic_target, self.critic)
+                                                     self.block, self.head,self.l_f_size).to(self.device)
+            # hard_update(self.critic_target, self.critic)
         else:
             self.critic = QNetwork(self.action_dim, self.pstate_dim).to(device=self.device)
             self.critic_optim = Adam(self.critic.parameters(), LR_C)
@@ -134,7 +140,7 @@ class SAC(object):
 
             ######### Initializing Transformer based Actor ##########
             self.policy = GaussianTransformerPolicy(self.action_dim, self.pstate_dim,
-                                                    self.block, self.head).to(self.device)
+                                                    self.block, self.head, self.l_f_size).to(self.device)
             
             if policy_attention_fix:
                 params = list(self.policy.fc1.parameters()) + list(self.policy.fc2.parameters()) +\
@@ -147,7 +153,7 @@ class SAC(object):
             self.alpha = 0
             self.automatic_entropy_tuning = False
             self.policy = DeterministicTransformerPolicy(self.action_dim, self.pstate_dim,
-                                                         self.block, self.head).to(self.device)
+                                                         self.block, self.head,self.l_f_size).to(self.device)
             
             if policy_attention_fix:
                 params = list(self.policy.fc1.parameters()) + list(self.policy.fc2.parameters()) +\
@@ -160,17 +166,19 @@ class SAC(object):
             self.automatic_entropy_tuning = False
             self.policy = DeterministicPolicy(self.action_dim, self.pstate_dim).to(self.device)
             self.policy_optim = Adam(self.policy.parameters(), lr=LR_A)
-
+        self.target_policy = copy.deepcopy(self.policy)
     def choose_action(self, istate, pstate, evaluate=False):
         if istate.ndim < 4:
             #print(f'istate.ndim = {istate.ndim}')
-            istate = torch.FloatTensor(istate).float().unsqueeze(0).permute(0,3,1,2).to(self.device)
+            istate = torch.FloatTensor(istate).float().permute(2,0,1).to(self.device)
+            # istate = torch.FloatTensor(istate).float().unsqueeze(0).permute(0,3,1,2).to(self.device)
             pstate = torch.FloatTensor(pstate).float().unsqueeze(0).to(self.device)
         else:
             istate = torch.FloatTensor(istate).float().permute(0,3,1,2).to(self.device)
             pstate = torch.FloatTensor(pstate).float().to(self.device)
         
         if evaluate is False:
+            # print(f'self.policy.sample([istate, pstate]) {istate.shape}')
             action, _, _ = self.policy.sample([istate, pstate])
         else:
             _, _, action = self.policy.sample([istate, pstate])
@@ -217,12 +225,12 @@ class SAC(object):
             istates, pstates, actions, engages = data['obs'], data['pobs'], data['act'], data['engage']
             rewards, next_istates, next_pstates, dones = data['rew'], data['next_obs'], data['next_pobs'], data['done']
             
-        istates = torch.FloatTensor(istates).permute(0,3,1,2).to(self.device)
+        istates = torch.FloatTensor(istates).to(self.device)
         pstates = torch.FloatTensor(pstates).to(self.device)
         actions = torch.FloatTensor(actions).to(self.device)
         rewards = torch.FloatTensor(rewards).to(self.device)
         engages = torch.FloatTensor(engages).to(self.device)
-        next_istates = torch.FloatTensor(next_istates).permute(0,3,1,2).to(self.device)
+        next_istates = torch.FloatTensor(next_istates).to(self.device)
         next_pstates = torch.FloatTensor(next_pstates).to(self.device)
         dones = torch.FloatTensor(dones).to(self.device)
         
@@ -248,7 +256,7 @@ class SAC(object):
 
         ##### Pre buffer (expert) guidence loss, Optional #####
         if expert_flag:
-            istates_expert = torch.FloatTensor(istates_expert).permute(0,3,1,2).to(self.device)
+            istates_expert = torch.FloatTensor(istates_expert).to(self.device)
             pstates_expert = torch.FloatTensor(pstates_expert).to(self.device)
             actions_expert = torch.FloatTensor(actions_expert).to(self.device)
             _, _, predicted_actions = self.policy.sample([istates_expert, pstates_expert]) 
@@ -282,28 +290,18 @@ class SAC(object):
             self.alpha_optim.step()
 
             self.alpha = self.log_alpha.exp()
-            alpha_tlogs = self.alpha.clone()
+            # alpha_tlogs = self.alpha.clone()
             alpha_loss = torch.tensor(0.).to(self.device)
-            alpha_tlogs = torch.tensor(self.alpha)
-
+            # alpha_tlogs = torch.tensor(self.alpha)
         if self.itera % self.policy_freq == 0:
             soft_update(self.critic_target, self.critic, self.tau)
         
         self.itera += 1
 
-        ##### update priorities #####
-        # priorities = td_errors
-        # priorities = priorities.cpu().numpy()
-        # if expert_flag:
-        #     self.replay_buffer.update_priorities(indexes_agent, priorities[0:batch_size])
-        #     self.replay_buffer_expert.update_priorities(indexes_expert, priorities[-int(self.batch_expert):])
-        # else:
-        #     self.replay_buffer.update_priorities(indexes, priorities)
-
-        #return qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item(), alpha_tlogs.item()
         return qf1_loss.item(), policy_loss.item()
 
-    def learn(self, batch_size=64):
+    def learn_sac(self, batch_size=64):
+        #SAC
         # Sample a batch from memory
         data = self.replay_buffer.sample(batch_size)
         istates, pstates, actions = data['obs'], data['pobs'], data['act']
@@ -320,6 +318,7 @@ class SAC(object):
         with torch.no_grad():
             next_state_actions, next_state_log_pi, _ = self.policy.sample([next_istates, next_pstates])
             qf1_next_target, qf2_next_target = self.critic_target([next_istates, next_pstates, next_state_actions])
+            print(f'qf1_next_target = {qf1_next_target}, qf2_next_target = {qf2_next_target} ')
             min_qf_next_target = torch.min(qf1_next_target, qf2_next_target) - self.alpha * next_state_log_pi
             next_q_value = rewards + self.gamma * (min_qf_next_target)
             
@@ -333,7 +332,7 @@ class SAC(object):
         self.critic_optim.step()
         
         pi, log_pi, _ = self.policy.sample([istates, pstates])
-
+        
         qf1_pi, qf2_pi = self.critic([istates, pstates, pi])
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
 
@@ -369,8 +368,73 @@ class SAC(object):
         # self.replay_buffer.update_priorities(indexes, priorities)
 
         #return qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item(), alpha_tlogs.item()
+        return qf1_loss.item(), policy_loss.item() 
+
+    def learn(self, batch_size=64):
+        # Sample a batch from memory
+        data = self.replay_buffer.sample(batch_size)
+        istates, pstates, actions = data['obs'], data['pobs'], data['act']
+        rewards, next_istates, next_pstates, dones = data['rew'], data['next_obs'], data['next_pobs'], data['done']
+        # print(f'istates.shape Av = {istates.shape}')
+        istates = torch.FloatTensor(istates).to(self.device)
+        # print(f'istates.shape Ap = {istates.shape}')
+        pstates = torch.FloatTensor(pstates).to(self.device)
+        actions = torch.FloatTensor(actions).to(self.device)
+        rewards = torch.FloatTensor(rewards).to(self.device)
+        next_istates = torch.FloatTensor(next_istates).to(self.device)
+        next_pstates = torch.FloatTensor(next_pstates).to(self.device)
+        dones = torch.FloatTensor(dones).to(self.device)
+        # print(f'pstates.shape Av = {pstates.shape}')
+        # print(f'actions.shape Av = {actions.shape}')
+        
+        with torch.no_grad():
+            next_state_actions, next_state_log_pi, _ = self.policy.sample([next_istates, next_pstates])
+            qf1_next_target, qf2_next_target = self.critic_target([next_istates, next_pstates, next_state_actions])
+            min_qf_next_target = torch.min(qf1_next_target, qf2_next_target) - self.alpha * next_state_log_pi
+            next_q_value = rewards + self.gamma * (min_qf_next_target)
+        
+        qf1, qf2 = self.critic([istates, pstates, actions])
+        qf1_loss = F.mse_loss(qf1, next_q_value)
+        qf2_loss = F.mse_loss(qf2, next_q_value)
+        qf_loss = qf1_loss + qf2_loss
+                
+        self.critic_optim.zero_grad()
+        qf_loss.backward()
+        self.critic_optim.step()
+        
+        pi, log_pi, _ = self.policy.sample([istates, pstates])
+
+        qf1_pi, qf2_pi = self.critic([istates, pstates, pi])
+        min_qf_pi = torch.min(qf1_pi, qf2_pi)
+
+        policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean()
+
+        self.policy_optim.zero_grad()
+        policy_loss.backward()
+        self.policy_optim.step()
+
+        ##### Automatic Entropy Adjustment #####
+        if self.automatic_entropy_tuning:
+            alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean()
+
+            self.alpha_optim.zero_grad()
+            alpha_loss.backward()
+            self.alpha_optim.step()
+
+            self.alpha = self.log_alpha.exp()
+            # alpha_tlogs = self.alpha.clone() # For TensorboardX logs
+        else:
+            alpha_loss = torch.tensor(0.).to(self.device)
+            # alpha_tlogs = torch.tensor(self.alpha) # For TensorboardX logs
+
+
+        if self.itera % self.policy_freq == 0:
+            soft_update(self.critic_target, self.critic, self.tau)
+        
+        self.itera += 1
+
+        #return qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item(), alpha_tlogs.item()
         return qf1_loss.item(), policy_loss.item()
-    
     def store_transition(self,  s, ps, a, ae, i, r, s_, ps_, d=0):
         self.replay_buffer.add(obs=s,
                                pobs=ps,
@@ -422,9 +486,9 @@ class SAC(object):
         torch.save(self.policy.state_dict(), '{}/actor.pkl'.format(output))
         torch.save(self.critic.state_dict(), '{}/critic.pkl'.format(output))
 
-    def save(self, filename, directory, reward, seed):
-        torch.save(self.policy.state_dict(), '%s/%s_reward%s_seed%s_actor.pth' % (directory, filename, reward, seed))
-        torch.save(self.critic.state_dict(), '%s/%s_reward%s_seed%s_critic.pth' % (directory, filename, reward, seed))
+    def save(self, filename, directory, reward,seed, nb_col=100):
+        torch.save(self.policy.state_dict(), '%s/%s_reward_%s_nbCol_%s_seed_%s_actor.pth' % (directory, filename, reward,nb_col, seed))
+        torch.save(self.critic.state_dict(), '%s/%s_reward_%s_nbCol_%s_seed_%s_critic.pth' % (directory, filename, reward,nb_col, seed))
 
     def load(self, filename, directory):
         # gtrl_reward148_seed525

@@ -1,6 +1,13 @@
 <?xml version='1.0' encoding='utf-8'?>
 <sdf version="1.6">
-  <world name="world">
+  <world name="default">
+      <!-- Load gazebo_ros_state plugin -->
+    <plugin filename="libgazebo_ros_state.so" name="gazebo_ros_state">
+      <!-- Set the ROS node name for the plugin -->
+      <ros>
+        <namespace>/gazebo</namespace>
+      </ros>
+    </plugin>
     <gravity>0 0 -9.8</gravity>
     <physics default="0" name="default_physics" type="ode">
       <max_step_size>0.001</max_step_size>
@@ -19,6 +26,73 @@
       <uri>model://ground_plane</uri>
       <pose>0 0 -0.1 0 -0 0</pose>
     </include>
+    <!-- <model name='target_cone'>
+    <pose frame=''>-5.5 3 0 0 0 0</pose>
+    <link name='body'>
+      <visual name='target_cone'>
+        <pose frame=''>-5.5 3 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.15</radius>
+            <length>0.01</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Grey</name>
+          </script>
+          <ambient>1 0 0 1</ambient>
+        </material>
+      </visual>
+      <pose frame=''>-5.5 3 0 0 0 0</pose>
+    </link>
+    <static>1</static>
+    </model> -->
+    <!-- <model name='target_cone'>
+        <pose frame=''>-5.5 3 0 0 0 0</pose>
+        <scale>1 1 1</scale>
+        <link name='body'>
+          <pose frame=''>-5.5 3 0 0 0 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+    </model> -->
+      <!-- <model name="target_cone">
+      <include>
+        <uri>model://construction_cone</uri>
+        <static>true</static>
+        <pose>-5.5 3 0 0 0 0</pose>
+      </include>
+    </model> -->
+  <model name="target_cone">
+    <static>true</static>
+    <pose>-5.5 3 0 0 0 0</pose>
+    <link name="link">
+      <visual name="visual">
+        <geometry>
+          <cylinder>
+            <radius>0.15</radius>
+            <length>0.01</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>1 0 0 1</ambient>
+          <diffuse>1 0 0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+      <collision name="collision">
+        <geometry>
+          <cylinder>
+            <radius>0.15</radius>
+            <length>0.01</length>
+          </cylinder>
+        </geometry>
+      </collision>
+    </link>
+  </model>
     <model name="aws_robomaker_hospital_floor_01_floor_1">
       <include>
         <uri>model://aws_robomaker_hospital_floor_01_floor</uri>
@@ -1286,5 +1360,12 @@
         <pose>1.30985 -0.727185 -0 0 0 -1.53446</pose>
       </include>
     </model>
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose>-0.613755 2.934 21.6059 -0 1.4938 -1.57119</pose>
+        <view_controller>orbit</view_controller>
+        <projection_type>perspective</projection_type>
+      </camera>
+    </gui>
   </world>
 </sdf>

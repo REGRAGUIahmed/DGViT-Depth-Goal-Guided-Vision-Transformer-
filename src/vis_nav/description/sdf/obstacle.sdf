@@ -1,9 +1,9 @@
 <?xml version='1.0'?>
 <sdf version='1.6'>
-  <model name='obstacle_box'>
+  <model name='target_cone'>
     <pose frame=''>0 0 0 0 -0 -1.5708</pose>
-    <link name='obstacle_box'>
-      <visual name='obstacle_box'>
+    <link name='target_cone'>
+      <visual name='target_cone'>
         <pose frame=''>0 0 0.0005 0 -0 0</pose>
         <geometry>
           <cylinder>
