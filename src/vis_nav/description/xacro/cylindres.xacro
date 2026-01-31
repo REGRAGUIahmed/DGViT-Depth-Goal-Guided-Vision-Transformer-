@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
+<!--Cylindre 1  -->
+<joint name="cylindre1_joint" type="fixed">
+        <parent link="chassis1"/>
+        <child link="cylindre1"/>
+        <origin xyz="0.01 0.03 0.07" rpy="0 0 0"/>
+    </joint>
+
+    <link name="cylindre1">
+        <visual>
+            <geometry>
+                 <cylinder length="0.05" radius="0.003" />
+            </geometry>
+            <material name="white"/>
+        </visual>
+        <collision>
+            <geometry>
+                 <cylinder length="0.05" radius="0.003" />
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="0.000706858" length="0.05" radius="0.003">
+            <origin xyz="0.01 0.03 0.07" rpy="0.0 0.0 0.0"/>
+        </xacro:inertial_cylinder>
+    </link>
+<gazebo reference="cylindre1">
+    <material>Gazebo/White</material>
+</gazebo>
+
+<!--Cylindre 2  -->
+<joint name="cylindre2_joint" type="fixed">
+        <parent link="chassis1"/>
+        <child link="cylindre2"/>
+        <origin xyz="0.01 -0.03 0.07" rpy="0 0 0"/>
+    </joint>
+
+    <link name="cylindre2">
+        <visual>
+            <geometry>
+                 <cylinder length="0.05" radius="0.003" />
+            </geometry>
+            <material name="white"/>
+        </visual>
+        <collision>
+            <geometry>
+                 <cylinder length="0.05" radius="0.003" />
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="0.000706858" length="0.05" radius="0.003">
+            <origin xyz="0.01 -0.03 0.07" rpy="0.0 0.0 0.0"/>
+        </xacro:inertial_cylinder>
+    </link>
+<gazebo reference="cylindre2">
+    <material>Gazebo/White</material>
+</gazebo>
+
+
+<!--Cylindre 3  -->
+<joint name="cylindre3_joint" type="fixed">
+        <parent link="chassis5"/>
+        <child link="cylindre3"/>
+        <origin xyz="0.0125 -0.03 0.025" rpy="0 0 0"/>
+    </joint>
+
+    <link name="cylindre3">
+        <visual>
+            <geometry>
+                 <cylinder length="0.05" radius="0.003" />
+            </geometry>
+            <material name="white"/>
+        </visual>
+        <collision>
+            <geometry>
+                 <cylinder length="0.05" radius="0.003" />
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="0.000706858" length="0.05" radius="0.003">
+            <origin xyz="0.0125 -0.03 0.025" rpy="0.0 0.0 0.0"/>
+        </xacro:inertial_cylinder>
+    </link>
+<gazebo reference="cylindre3">
+    <material>Gazebo/White</material>
+</gazebo>
+
+
+<!--Cylindre 4  -->
+<joint name="cylindre4_joint" type="fixed">
+        <parent link="chassis5"/>
+        <child link="cylindre4"/>
+        <origin xyz="0.0125 0.03 0.025" rpy="0 0 0"/>
+    </joint>
+
+    <link name="cylindre4">
+        <visual>
+            <geometry>
+                 <cylinder length="0.05" radius="0.003" />
+            </geometry>
+            <material name="white"/>
+        </visual>
+        <collision>
+            <geometry>
+                 <cylinder length="0.05" radius="0.003" />
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="0.000706858" length="0.05" radius="0.003">
+            <origin xyz="0.0125 0.03 0.025" rpy="0.0 0.0 0.0"/>
+        </xacro:inertial_cylinder>
+    </link>
+<gazebo reference="cylindre4">
+    <material>Gazebo/White</material>
+</gazebo>
+
+</robot>
